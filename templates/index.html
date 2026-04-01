@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Poker Coach</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0d1b2a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      color: #f5c842;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+      color: #8899aa;
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+
+    .card-app {
+      background: #162032;
+      border-radius: 16px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 640px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #8899aa;
+      margin-bottom: 0.5rem;
+      margin-top: 1.25rem;
+    }
+
+    .card-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .card-picker {
+      display: flex;
+      gap: 4px;
+    }
+
+    .card-picker select {
+      background: #0d1b2a;
+      color: #f5c842;
+      border: 1px solid #2a3f5a;
+      border-radius: 6px;
+      padding: 0.4rem 0.3rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      appearance: none;
+      text-align: center;
+    }
+
+    .card-picker select:focus { outline: 2px solid #f5c842; }
+
+    .card-display {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 60px;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      cursor: pointer;
+      user-select: none;
+      border: 2px solid transparent;
+      transition: border-color 0.15s;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .card-display:hover { border-color: #f5c842; }
+    .card-display.red { color: #e53e3e; }
+    .card-display.black { color: #1a202c; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+
+    .field label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8899aa;
+      display: block;
+      margin-bottom: 0.35rem;
+    }
+
+    .field input, .field select {
+      width: 100%;
+      background: #0d1b2a;
+      color: #e0e0e0;
+      border: 1px solid #2a3f5a;
+      border-radius: 8px;
+      padding: 0.55rem 0.75rem;
+      font-size: 1rem;
+    }
+
+    .field input:focus, .field select:focus { outline: 2px solid #f5c842; }
+
+    button#submitBtn {
+      margin-top: 1.75rem;
+      width: 100%;
+      background: #f5c842;
+      color: #0d1b2a;
+      border: none;
+      border-radius: 10px;
+      padding: 0.85rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      letter-spacing: 0.04em;
+    }
+
+    button#submitBtn:hover { opacity: 0.9; }
+    button#submitBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Result panel */
+    #result {
+      display: none;
+      margin-top: 1.75rem;
+      background: #0d1b2a;
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid #2a3f5a;
+    }
+
+    .action-badge {
+      display: inline-block;
+      font-size: 1.8rem;
+      font-weight: 800;
+      padding: 0.2rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+
+    .action-fold { background: #c53030; color: #fff; }
+    .action-call { background: #2b6cb0; color: #fff; }
+    .action-raise { background: #276749; color: #fff; }
+
+    .confidence {
+      font-size: 0.85rem;
+      color: #8899aa;
+      margin-bottom: 1rem;
+    }
+
+    .prob-bar-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 1.25rem;
+    }
+
+    .prob-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+    }
+
+    .prob-label { width: 42px; color: #8899aa; }
+
+    .prob-bar-bg {
+      flex: 1;
+      background: #162032;
+      border-radius: 4px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .prob-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    .bar-fold { background: #c53030; }
+    .bar-call { background: #2b6cb0; }
+    .bar-raise { background: #276749; }
+
+    .prob-pct { width: 40px; text-align: right; color: #e0e0e0; }
+
+    .explanation {
+      font-size: 0.92rem;
+      line-height: 1.6;
+      color: #b0c0d0;
+      border-top: 1px solid #2a3f5a;
+      padding-top: 1rem;
+    }
+
+    .explanation strong { color: #f5c842; }
+
+    /* Card modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: #162032;
+      border-radius: 16px;
+      padding: 1.5rem;
+      width: min(400px, 95vw);
+    }
+
+    .modal h3 {
+      color: #f5c842;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .rank-grid, .suit-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .rank-btn, .suit-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background: #0d1b2a;
+      border: 2px solid #2a3f5a;
+      color: #e0e0e0;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .rank-btn:hover, .suit-btn:hover { border-color: #f5c842; }
+    .rank-btn.selected, .suit-btn.selected { border-color: #f5c842; background: #f5c842; color: #0d1b2a; }
+
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-cancel { background: none; border: 1px solid #2a3f5a; color: #8899aa; border-radius: 8px; padding: 0.5rem 1rem; cursor: pointer; }
+    .btn-confirm { background: #f5c842; border: none; color: #0d1b2a; border-radius: 8px; padding: 0.5rem 1rem; font-weight: 700; cursor: pointer; }
+
+    .error-msg {
+      color: #fc8181;
+      font-size: 0.9rem;
+      margin-top: 0.75rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Poker Coach</h1>
+<p class="subtitle">Enter your hand situation and get a GTO-informed recommendation</p>
+
+<div class="card-app">
+
+  <!-- Hole cards -->
+  <div class="section-label">Your Hole Cards</div>
+  <div class="card-row" id="holeCardsRow">
+    <div class="card-display black" data-slot="hole-0" onclick="openModal(this)">?</div>
+    <div class="card-display black" data-slot="hole-1" onclick="openModal(this)">?</div>
+  </div>
+
+  <!-- Board -->
+  <div class="section-label">Board Cards <span style="color:#556; font-size:0.8em">(click to add)</span></div>
+  <div class="card-row" id="boardCardsRow">
+    <div class="card-display black" data-slot="board-0" onclick="openModal(this)">?</div>
+    <div class="card-display black" data-slot="board-1" onclick="openModal(this)">?</div>
+    <div class="card-display black" data-slot="board-2" onclick="openModal(this)">?</div>
+    <div class="card-display black" data-slot="board-3" onclick="openModal(this)" style="opacity:0.4">?</div>
+    <div class="card-display black" data-slot="board-4" onclick="openModal(this)" style="opacity:0.4">?</div>
+  </div>
+
+  <!-- Numerics -->
+  <div class="grid-2">
+    <div class="field">
+      <label>Pot Size ($)</label>
+      <input type="number" id="potSize" value="100" min="1" />
+    </div>
+    <div class="field">
+      <label>Bet to Call ($)</label>
+      <input type="number" id="betToCall" value="30" min="0" />
+    </div>
+    <div class="field">
+      <label>Street</label>
+      <select id="street">
+        <option value="preflop">Preflop</option>
+        <option value="flop" selected>Flop</option>
+        <option value="turn">Turn</option>
+        <option value="river">River</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Your Position (0 = UTG)</label>
+      <select id="position">
+        <option value="0">0 – UTG (Early)</option>
+        <option value="1">1 – UTG+1</option>
+        <option value="2">2 – MP</option>
+        <option value="3">3 – MP+1</option>
+        <option value="4">4 – HJ</option>
+        <option value="5" selected>5 – CO</option>
+        <option value="6">6 – BTN (Late)</option>
+        <option value="7">7 – SB</option>
+        <option value="8">8 – BB</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Players at Table</label>
+      <select id="numPlayers">
+        <option value="2">2 (Heads-up)</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6" selected>6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+      </select>
+    </div>
+  </div>
+
+  <button id="submitBtn" onclick="getRecommendation()">Get Recommendation</button>
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- Result -->
+  <div id="result">
+    <div class="action-badge" id="actionBadge">—</div>
+    <div class="confidence" id="confidenceText"></div>
+    <div class="prob-bar-wrap">
+      <div class="prob-row">
+        <span class="prob-label">Fold</span>
+        <div class="prob-bar-bg"><div class="prob-bar-fill bar-fold" id="barFold" style="width:0%"></div></div>
+        <span class="prob-pct" id="pctFold">0%</span>
+      </div>
+      <div class="prob-row">
+        <span class="prob-label">Call</span>
+        <div class="prob-bar-bg"><div class="prob-bar-fill bar-call" id="barCall" style="width:0%"></div></div>
+        <span class="prob-pct" id="pctCall">0%</span>
+      </div>
+      <div class="prob-row">
+        <span class="prob-label">Raise</span>
+        <div class="prob-bar-bg"><div class="prob-bar-fill bar-raise" id="barRaise" style="width:0%"></div></div>
+        <span class="prob-pct" id="pctRaise">0%</span>
+      </div>
+    </div>
+    <div class="explanation" id="explanation"></div>
+  </div>
+</div>
+
+<!-- Card picker modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>Pick a Card</h3>
+    <div class="rank-grid" id="rankGrid"></div>
+    <div class="suit-grid" id="suitGrid"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm" onclick="confirmCard()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const RANKS = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
+  const SUITS = [
+    { sym: '♠', char: 's', color: 'black' },
+    { sym: '♥', char: 'h', color: 'red'   },
+    { sym: '♦', char: 'd', color: 'red'   },
+    { sym: '♣', char: 'c', color: 'black' },
+  ];
+
+  // card state: slot -> { rank, suit } or null
+  const cards = {};
+
+  let activeSlot = null;
+  let selectedRank = null;
+  let selectedSuit = null;
+
+  // Build modal grids
+  const rankGrid = document.getElementById('rankGrid');
+  RANKS.forEach(r => {
+    const btn = document.createElement('button');
+    btn.className = 'rank-btn';
+    btn.textContent = r;
+    btn.onclick = () => selectRank(r, btn);
+    rankGrid.appendChild(btn);
+  });
+
+  const suitGrid = document.getElementById('suitGrid');
+  SUITS.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'suit-btn';
+    btn.textContent = s.sym;
+    btn.style.color = s.color === 'red' ? '#e53e3e' : '#1a202c';
+    btn.onclick = () => selectSuit(s, btn);
+    suitGrid.appendChild(btn);
+  });
+
+  function selectRank(r, btn) {
+    selectedRank = r;
+    document.querySelectorAll('.rank-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  function selectSuit(s, btn) {
+    selectedSuit = s;
+    document.querySelectorAll('.suit-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  function openModal(el) {
+    activeSlot = el.dataset.slot;
+    selectedRank = null;
+    selectedSuit = null;
+    document.querySelectorAll('.rank-btn, .suit-btn').forEach(b => b.classList.remove('selected'));
+
+    // Pre-select existing card
+    const existing = cards[activeSlot];
+    if (existing) {
+      document.querySelectorAll('.rank-btn').forEach(b => {
+        if (b.textContent === existing.rank) { b.classList.add('selected'); selectedRank = existing.rank; }
+      });
+      document.querySelectorAll('.suit-btn').forEach((b, i) => {
+        if (SUITS[i].char === existing.suit.char) { b.classList.add('selected'); selectedSuit = existing.suit; }
+      });
+    }
+
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+    activeSlot = null;
+  }
+
+  function confirmCard() {
+    if (!selectedRank || !selectedSuit) return;
+    cards[activeSlot] = { rank: selectedRank, suit: selectedSuit };
+    renderCard(activeSlot);
+    closeModal();
+  }
+
+  function renderCard(slot) {
+    const el = document.querySelector(`[data-slot="${slot}"]`);
+    const c = cards[slot];
+    if (!c) { el.innerHTML = '?'; el.className = 'card-display black'; return; }
+    el.innerHTML = `<span>${c.rank}</span><span>${c.suit.sym}</span>`;
+    el.className = `card-display ${c.suit.color}`;
+    el.style.opacity = '1';
+  }
+
+  function buildCardString(slot) {
+    const c = cards[slot];
+    if (!c) return null;
+    return c.rank + c.suit.char;
+  }
+
+  async function getRecommendation() {
+    const holeCards = ['hole-0', 'hole-1'].map(buildCardString).filter(Boolean);
+    const boardSlots = ['board-0','board-1','board-2','board-3','board-4'];
+    const boardCards = boardSlots.map(buildCardString).filter(Boolean);
+
+    const errorEl = document.getElementById('errorMsg');
+
+    if (holeCards.length < 2) {
+      errorEl.textContent = 'Please select both hole cards.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    errorEl.style.display = 'none';
+
+    const payload = {
+      hole_cards: holeCards,
+      board_cards: boardCards,
+      pot_size: parseFloat(document.getElementById('potSize').value) || 100,
+      bet_to_call: parseFloat(document.getElementById('betToCall').value) || 0,
+      street: document.getElementById('street').value,
+      position: parseInt(document.getElementById('position').value),
+      num_players: parseInt(document.getElementById('numPlayers').value),
+    };
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Thinking...';
+
+    try {
+      const resp = await fetch('/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await resp.json();
+
+      if (data.error) {
+        errorEl.textContent = data.error;
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      showResult(data);
+    } catch (e) {
+      errorEl.textContent = 'Network error — is the server running?';
+      errorEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Get Recommendation';
+    }
+  }
+
+  function showResult(data) {
+    const action = data.action.toLowerCase();
+    const badge = document.getElementById('actionBadge');
+    badge.textContent = data.action;
+    badge.className = `action-badge action-${action}`;
+
+    document.getElementById('confidenceText').textContent =
+      `Confidence: ${data.confidence}%  |  Hand Strength: ${data.hand_strength_pct}%  |  Pot Odds: ${data.pot_odds_pct}%`;
+
+    const p = data.probabilities;
+    setBar('Fold', p.fold);
+    setBar('Call', p.call);
+    setBar('Raise', p.raise);
+
+    document.getElementById('explanation').innerHTML =
+      data.explanation.replace(/(\d+\.?\d*%)/g, '<strong>$1</strong>');
+
+    const result = document.getElementById('result');
+    result.style.display = 'block';
+    result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function setBar(label, pct) {
+    const key = label.toLowerCase();
+    document.getElementById(`bar${label}`).style.width = pct + '%';
+    document.getElementById(`pct${label}`).textContent = pct + '%';
+  }
+
+  // Close modal on overlay click
+  document.getElementById('modalOverlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+</script>
+</body>
+</html>
